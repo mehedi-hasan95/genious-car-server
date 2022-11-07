@@ -22,6 +22,20 @@ app.get('/', (req, res) => {
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.PASSWORD}@cluster0.k4gmzpi.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+function verifyJwt(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if(!authHeader) {
+        return res.status(401).send({message: 'Unauthorize access'});
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.CRIPTO_SECRET_KEY, function(err, decoded){
+        if(err) {
+            return res.status(401).send({message: 'Unauthorize access'});
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
 async function run() {
     try {
@@ -51,9 +65,13 @@ async function run() {
         })
 
         // Display a spesic users order in the client side
-        app.get('/orders', async(req, res) => {
-            console.log(req.headers.authorization);
+        app.get('/orders', verifyJwt, async(req, res) => {
+            
+            const decoded = req.decoded;
 
+            if(decoded.email !== req.query.email) {
+                res.status(403).send({message: "Unauthorize uzer"});
+            }
 
             let query = {};
             if(req.query.email) {
