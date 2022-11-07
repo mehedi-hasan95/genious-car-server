@@ -52,6 +52,9 @@ async function run() {
 
         // Display a spesic users order in the client side
         app.get('/orders', async(req, res) => {
+            console.log(req.headers.authorization);
+
+
             let query = {};
             if(req.query.email) {
                 query = {
